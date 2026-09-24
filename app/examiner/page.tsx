@@ -151,6 +151,11 @@ export default function ExaminerPortal() {
                       </CardDescription>
                     </div>
                     <div className="flex gap-2 ml-4">
+                      <Link href={`/examiner/edit?id=${assignment.id}`}>
+                        <Button variant="outline" size="sm">
+                          Edit
+                        </Button>
+                      </Link>
                       <Link href={`/examiner/mark?id=${assignment.id}`}>
                         <Button>
                           <Upload className="h-4 w-4 mr-2" />
