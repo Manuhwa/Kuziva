@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { GraduationCap, ArrowLeft, FileText, Download, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,14 +11,19 @@ import { examinerStorage } from '@/lib/examiner-storage';
 import { Assignment, MarkingResult } from '@/lib/types';
 import { downloadMarkedDocument } from '@/lib/file-utils';
 
-export default function AssignmentResults() {
-  const params = useParams();
+function AssignmentResultsContent() {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const assignmentId = params.id as string;
+  const assignmentId = searchParams.get('id');
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [results, setResults] = useState<MarkingResult[]>([]);
 
   useEffect(() => {
+    if (!assignmentId) {
+      router.push('/examiner');
+      return;
+    }
+
     const loaded = storage.getAssignment(assignmentId);
     if (loaded) {
       setAssignment(loaded);
@@ -45,7 +50,7 @@ export default function AssignmentResults() {
     });
   };
 
-  if (!assignment) {
+  if (!assignmentId || !assignment) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -134,7 +139,7 @@ export default function AssignmentResults() {
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No Marked Scripts Yet</h3>
               <p className="text-gray-600 mb-6">Upload and mark student submissions to see results here</p>
-              <Link href={`/examiner/mark/${assignment.id}`}>
+              <Link href={`/examiner/mark?id=${assignment.id}`}>
                 <Button>Mark Scripts Now</Button>
               </Link>
             </CardContent>
@@ -143,7 +148,7 @@ export default function AssignmentResults() {
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">All Results</h2>
-              <Link href={`/examiner/mark/${assignment.id}`}>
+              <Link href={`/examiner/mark?id=${assignment.id}`}>
                 <Button variant="outline">Mark More Scripts</Button>
               </Link>
             </div>
@@ -200,7 +205,7 @@ export default function AssignmentResults() {
                       </div>
 
                       <div className="flex gap-2 mt-4 pt-4 border-t">
-                        <Link href={`/result/${result.id}`} className="flex-1">
+                        <Link href={`/result?id=${result.id}`} className="flex-1">
                           <Button variant="outline" className="w-full">
                             <FileText className="h-4 w-4 mr-2" />
                             View Details
@@ -222,5 +227,20 @@ export default function AssignmentResults() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function AssignmentResults() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <AssignmentResultsContent />
+    </Suspense>
   );
 }

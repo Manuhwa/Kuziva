@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { GraduationCap, ArrowLeft, Download, AlertCircle, CheckCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,14 +11,19 @@ import { examinerStorage } from '@/lib/examiner-storage';
 import { MarkingResult } from '@/lib/types';
 import { downloadMarkedDocument } from '@/lib/file-utils';
 
-export default function ViewResult() {
-  const params = useParams();
+function ViewResultContent() {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const resultId = params.id as string;
+  const resultId = searchParams.get('id');
   const [result, setResult] = useState<MarkingResult | null>(null);
   const [assignment, setAssignment] = useState<any>(null);
 
   useEffect(() => {
+    if (!resultId) {
+      router.push('/examiner');
+      return;
+    }
+
     const loaded = storage.getResult(resultId);
     if (loaded) {
       setResult(loaded);
@@ -119,7 +124,7 @@ export default function ViewResult() {
     );
   };
 
-  if (!result || !assignment) {
+  if (!resultId || !result || !assignment) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -325,5 +330,20 @@ export default function ViewResult() {
         </Card>
       </main>
     </div>
+  );
+}
+
+export default function ViewResult() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading result...</p>
+        </div>
+      </div>
+    }>
+      <ViewResultContent />
+    </Suspense>
   );
 }
