@@ -151,14 +151,14 @@ export default function ExaminerPortal() {
                       </CardDescription>
                     </div>
                     <div className="flex gap-2 ml-4">
-                      <Link href={`/examiner/mark/${assignment.id}`}>
+                      <Link href={`/examiner/mark?id=${assignment.id}`}>
                         <Button>
                           <Upload className="h-4 w-4 mr-2" />
                           Mark Scripts
                         </Button>
                       </Link>
                       {results.length > 0 && (
-                        <Link href={`/examiner/results/${assignment.id}`}>
+                        <Link href={`/examiner/results?id=${assignment.id}`}>
                           <Button variant="outline">
                             <FileText className="h-4 w-4 mr-2" />
                             View Results

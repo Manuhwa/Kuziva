@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { GraduationCap, ArrowLeft, Upload, File, CheckCircle, XCircle, AlertCircle, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,10 +12,10 @@ import { FileSubmission, processUploadedFile, extractStudentName, SUPPORTED_FORM
 import { MarkingEngine } from '@/lib/marking-engine';
 import { examinerStorage } from '@/lib/examiner-storage';
 
-export default function MarkAssignment() {
-  const params = useParams();
+function MarkAssignmentContent() {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const assignmentId = params.id as string;
+  const assignmentId = searchParams.get('id');
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [files, setFiles] = useState<FileSubmission[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -23,6 +23,11 @@ export default function MarkAssignment() {
   const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
+    if (!assignmentId) {
+      router.push('/examiner');
+      return;
+    }
+
     const loaded = storage.getAssignment(assignmentId);
     if (loaded) {
       setAssignment(loaded);
@@ -167,7 +172,7 @@ export default function MarkAssignment() {
     }
   };
 
-  if (!assignment) {
+  if (!assignmentId || !assignment) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -323,7 +328,7 @@ export default function MarkAssignment() {
                       <div className="flex items-center gap-2 ml-4">
                         {file.status === 'completed' && file.result && (
                           <>
-                            <Link href={`/result/${file.result.id}`}>
+                            <Link href={`/result?id=${file.result.id}`}>
                               <Button variant="outline" size="sm">
                                 View
                               </Button>
@@ -356,5 +361,20 @@ export default function MarkAssignment() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function MarkAssignment() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto" />
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <MarkAssignmentContent />
+    </Suspense>
   );
 }
