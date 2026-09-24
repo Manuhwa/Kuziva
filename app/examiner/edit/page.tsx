@@ -55,15 +55,17 @@ function EditAssignmentContent() {
       return;
     }
     
-    setTitle(assignment.title);
-    setSubject(assignment.subject);
-    setMaxAiContentPercent(assignment.maxAiContentPercent);
-    setQuestions(assignment.questions.map(q => ({
+    const loadedQuestions = assignment.questions.map(q => ({
       id: q.id,
       prompt: q.prompt,
       maxMarks: q.maxMarks,
       markingGuide: q.markingGuide || ''
-    })));
+    }));
+    
+    setTitle(assignment.title);
+    setSubject(assignment.subject);
+    setMaxAiContentPercent(assignment.maxAiContentPercent);
+    setQuestions(loadedQuestions);
     
     if (assignment.assignmentDocument) {
       setAssignmentDocument(assignment.assignmentDocument);
@@ -106,8 +108,9 @@ function EditAssignmentContent() {
           })));
         }
       }
-    } catch (error: any) {
-      alert(`Failed to process assignment document: ${error.message}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to process assignment document: ${message}`);
     } finally {
       setIsProcessingAssignment(false);
     }
@@ -156,8 +159,9 @@ function EditAssignmentContent() {
           })));
         }
       }
-    } catch (error: any) {
-      alert(`Failed to process marking guide: ${error.message}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to process marking guide: ${message}`);
     } finally {
       setIsProcessingGuide(false);
     }
@@ -171,7 +175,7 @@ function EditAssignmentContent() {
     setQuestions(questions.filter((_, i) => i !== index));
   };
 
-  const updateQuestion = (index: number, field: keyof Question, value: any) => {
+  const updateQuestion = (index: number, field: keyof Question, value: unknown) => {
     const updated = [...questions];
     updated[index] = { ...updated[index], [field]: value };
     setQuestions(updated);
@@ -258,7 +262,7 @@ function EditAssignmentContent() {
               <CardTitle>Upload Assignment Document (Optional)</CardTitle>
               <CardDescription>
                 Upload or replace the assignment/question paper as a file (PDF, DOCX, TXT, MD, images, etc.). 
-                We'll extract text and help populate questions automatically.
+                We&apos;ll extract text and help populate questions automatically.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -305,7 +309,7 @@ function EditAssignmentContent() {
             <CardHeader>
               <CardTitle>Upload Marking Guide (Optional)</CardTitle>
               <CardDescription>
-                Upload or replace the official marking guide/memorandum/rubric document. We'll extract criteria and attach them to questions.
+                Upload or replace the official marking guide/memorandum/rubric document. We&apos;ll extract criteria and attach them to questions.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -387,7 +391,7 @@ function EditAssignmentContent() {
                   onChange={(e) => setMaxAiContentPercent(Number(e.target.value))}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  If a student's AI content exceeds this threshold, they will be recommended to redo the assignment.
+                  If a student&apos;s AI content exceeds this threshold, they will be recommended to redo the assignment.
                 </p>
               </div>
 

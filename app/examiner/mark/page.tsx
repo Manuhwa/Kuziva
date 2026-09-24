@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { GraduationCap, ArrowLeft, Upload, File, CheckCircle, XCircle, AlertCircle, Download, Loader2 } from 'lucide-react';
+import { GraduationCap, ArrowLeft, Upload, File, CheckCircle, XCircle, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { storage } from '@/lib/storage';
 import { Assignment } from '@/lib/types';
-import { FileSubmission, processUploadedFile, extractStudentName, SUPPORTED_FORMATS, downloadMarkedDocument } from '@/lib/file-utils';
+import { FileSubmission, processUploadedFile, extractStudentName, downloadMarkedDocument } from '@/lib/file-utils';
 import { MarkingEngine } from '@/lib/marking-engine';
 import { examinerStorage } from '@/lib/examiner-storage';
 
@@ -79,7 +79,6 @@ function MarkAssignmentContent() {
     if (!assignment) return;
 
     setIsProcessing(true);
-    const profile = examinerStorage.getProfile();
     const engine = new MarkingEngine({
       useOpenAI: false
     });
@@ -119,10 +118,11 @@ function MarkAssignmentContent() {
             : f
         ));
 
-      } catch (error: any) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
         setFiles(prev => prev.map(f =>
           f.id === fileSubmission.id
-            ? { ...f, status: 'failed', error: error.message }
+            ? { ...f, status: 'failed', error: message }
             : f
         ));
       }

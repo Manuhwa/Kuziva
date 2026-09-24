@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { GraduationCap, Plus, FileText, Settings, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,13 +10,8 @@ import { sampleAssignments } from '@/lib/sample-data';
 import { Assignment } from '@/lib/types';
 
 export default function ExaminerPortal() {
-  const router = useRouter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadAssignments();
-  }, []);
 
   const loadAssignments = () => {
     const stored = storage.getAssignments();
@@ -29,6 +23,10 @@ export default function ExaminerPortal() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    loadAssignments();
+  }, []);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
