@@ -1,0 +1,27 @@
+Student Name: Tendai Moyo
+Assignment: Educational Psychology Mid-Term
+Date: 20 September 2026
+
+Question 1: Vygotsky's Zone of Proximal Development
+
+The Zone of Proximal Development (ZPD) is a concept developed by Lev Vygotsky that refers to the difference between what a learner can do independently and what they can achieve with guidance from a more knowledgeable other. This "zone" represents the sweet spot where learning occurs most effectively.
+
+In the classroom, teachers can apply ZPD through scaffolding - providing temporary support that is gradually removed as students become more competent. For example, when teaching reading in a Grade 2 class at Madziwa, a teacher might initially read a story aloud, then read together with students (choral reading), then have students read in pairs, and finally have them read independently.
+
+Another application is peer tutoring, where stronger students help those who are struggling. I observed this during teaching practice where students worked in mixed-ability groups to solve mathematics problems. The more capable students naturally scaffolded their peers' learning.
+
+Teachers can also use think-alouds to demonstrate problem-solving strategies, making their thinking visible to students. This helps students understand the cognitive processes involved in tasks that are currently beyond their independent capability.
+
+Question 2: Piaget vs Bruner
+
+Piaget's theory emphasizes stages of cognitive development: sensorimotor, preoperational, concrete operational, and formal operational. He believed children move through these stages in a fixed sequence, with cognitive development driven by maturation and active exploration. At each stage, children think qualitatively differently.
+
+Bruner, on the other hand, proposed a spiral curriculum where concepts are revisited at increasing levels of complexity. He identified three modes of representation: enactive (action-based), iconic (image-based), and symbolic (language-based). Unlike Piaget, Bruner believed any subject could be taught at any age if presented appropriately.
+
+Similarities include both theorists emphasizing active learning and the importance of concrete experiences. Both recognize that children construct their own understanding.
+
+Key differences: Piaget saw development as stage-bound and age-related, while Bruner saw it as more flexible. Piaget focused on what children cannot do at certain ages, while Bruner emphasized how to make content accessible through appropriate representation.
+
+For Grade 3 learners (typically ages 8-9), I believe Bruner's theory is more applicable. Grade 3 students are in Piaget's concrete operational stage, but Bruner's approach allows teachers more flexibility. In my teaching practice, I successfully taught about Zimbabwean history by first using drama (enactive), then pictures and maps (iconic), then written descriptions (symbolic). This spiral approach worked better than waiting for students to "be ready" as Piaget might suggest.
+
+Bruner's emphasis on scaffolding and the social aspects of learning also aligns well with Zimbabwean cultural values of community and cooperative learning. His theory empowers teachers to be more proactive in supporting learning rather than simply waiting for developmental readiness.
