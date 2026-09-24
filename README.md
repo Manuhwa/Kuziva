@@ -5,6 +5,7 @@ AI-powered assignment marking application for teachers and lecturers. Mark assig
 ## Features
 
 ### Core Capabilities
+- **Assignment & Marking Guide Upload**: Upload assignment papers and marking guides as files (PDF, DOCX, TXT, MD, images, etc.) — text is extracted and questions/criteria are parsed automatically
 - **Batch Document Upload**: Upload multiple student documents at once (PDF, DOCX, TXT, MD, RTF, ODT, HTML, images via OCR, CSV, JSON)
 - **Intelligent Marking**: Multi-pass exhaustive analysis checking question demands, marking guides, coverage, strengths, and consistency
 - **AI Content Detection**: Multi-signal analysis to detect AI-generated content with configurable thresholds
@@ -80,14 +81,23 @@ npm start
 
 #### 2. Create a New Assignment
 - Click **"Create New Assignment"**
-- Enter title (e.g., "Grade 6 Science Test")
-- Enter subject (e.g., "General Science")
+- **Option A: Upload assignment document**
+  - Click "Upload Assignment"
+  - Select PDF, DOCX, TXT, or image file
+  - System extracts text and parses questions
+  - Review and edit parsed questions
+- **Option B: Type questions manually**
+  - Enter title (e.g., "Grade 6 Science Test")
+  - Enter subject (e.g., "General Science")
+  - Add questions with prompts and marks
+- **Upload marking guide (optional)**
+  - Click "Upload Marking Guide"
+  - Select PDF, DOCX, TXT file with rubric
+  - System parses and attaches criteria to questions
 - Set AI threshold (e.g., 20% - students over this get REDO)
-- Add questions:
-  - Question prompt
-  - Maximum marks
-  - Optional marking guide/rubric (each criterion on a new line)
 - Click **"Save Assignment"**
+
+For details on the upload feature, see [UPLOAD_FEATURE.md](UPLOAD_FEATURE.md).
 
 #### 3. Batch Mark Student Scripts
 - Select any assignment

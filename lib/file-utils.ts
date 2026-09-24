@@ -535,3 +535,149 @@ export async function downloadBatchAsZip(
     }, idx * 500);
   });
 }
+
+export interface ParsedQuestion {
+  prompt: string;
+  maxMarks: number;
+  markingGuide?: string;
+}
+
+export function parseAssignmentDocument(text: string): {
+  suggestedTitle?: string;
+  suggestedQuestions: ParsedQuestion[];
+} {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const suggestedQuestions: ParsedQuestion[] = [];
+  
+  let suggestedTitle: string | undefined;
+  const titlePatterns = [
+    /^(?:assignment|exam|test|quiz|mid-?term|final|assessment)[\s:]+(.+)/i,
+    /^(.+?)(?:exam|test|quiz|assignment)$/i
+  ];
+  
+  for (const line of lines.slice(0, 3)) {
+    for (const pattern of titlePatterns) {
+      const match = line.match(pattern);
+      if (match && match[1] && match[1].length > 5 && match[1].length < 100) {
+        suggestedTitle = match[1].trim();
+        break;
+      }
+    }
+    if (suggestedTitle) break;
+  }
+  
+  const questionPatterns = [
+    /^(?:question|q\.?)\s*(\d+)[:\.)]\s*(.+?)(?:\s*[\[\(](\d+)\s*marks?[\]\)])?$/i,
+    /^(\d+)\.?\s+(.+?)(?:\s*[\[\(](\d+)\s*marks?[\]\)])?$/,
+  ];
+  
+  let currentQuestion: ParsedQuestion | null = null;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    let matched = false;
+    for (const pattern of questionPatterns) {
+      const match = line.match(pattern);
+      if (match) {
+        if (currentQuestion) {
+          suggestedQuestions.push(currentQuestion);
+        }
+        
+        const questionNumber = match[1];
+        const questionText = match[2].trim();
+        const marks = match[3] ? parseInt(match[3]) : 10;
+        
+        if (questionText.length > 10) {
+          currentQuestion = {
+            prompt: questionText,
+            maxMarks: marks
+          };
+          matched = true;
+        }
+        break;
+      }
+    }
+    
+    if (!matched && currentQuestion && line.length > 20 && !line.match(/^[A-Z\s]+$/)) {
+      currentQuestion.prompt += ' ' + line;
+    }
+  }
+  
+  if (currentQuestion) {
+    suggestedQuestions.push(currentQuestion);
+  }
+  
+  if (suggestedQuestions.length === 0 && text.length > 50) {
+    suggestedQuestions.push({
+      prompt: text.substring(0, 500).trim() + (text.length > 500 ? '...' : ''),
+      maxMarks: 10
+    });
+  }
+  
+  return { suggestedTitle, suggestedQuestions };
+}
+
+export function parseMarkingGuide(text: string, questions: ParsedQuestion[]): {
+  questionGuides: { questionIndex: number; guide: string }[];
+  generalGuide?: string;
+} {
+  const questionGuides: { questionIndex: number; guide: string }[] = [];
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  
+  const questionMarkers = [
+    /^(?:question|q\.?)\s*(\d+)[:\.)]/i,
+    /^(\d+)\.?\s+(?:marking|rubric|criteria)/i,
+  ];
+  
+  let currentQuestionIndex = -1;
+  let currentGuide: string[] = [];
+  
+  for (const line of lines) {
+    let isQuestionMarker = false;
+    
+    for (const pattern of questionMarkers) {
+      const match = line.match(pattern);
+      if (match) {
+        if (currentQuestionIndex >= 0 && currentGuide.length > 0) {
+          questionGuides.push({
+            questionIndex: currentQuestionIndex,
+            guide: currentGuide.join('\n')
+          });
+        }
+        
+        currentQuestionIndex = parseInt(match[1]) - 1;
+        currentGuide = [];
+        isQuestionMarker = true;
+        
+        const remainingText = line.substring(match[0].length).trim();
+        if (remainingText.length > 10) {
+          currentGuide.push(remainingText);
+        }
+        break;
+      }
+    }
+    
+    if (!isQuestionMarker) {
+      const criterionPattern = /^[-•*]\s*(.+?)(?:\s*[\[\(](\d+)\s*marks?[\]\)])?$/;
+      const match = line.match(criterionPattern);
+      
+      if (match || line.length > 20) {
+        if (currentQuestionIndex >= 0) {
+          currentGuide.push(line);
+        }
+      }
+    }
+  }
+  
+  if (currentQuestionIndex >= 0 && currentGuide.length > 0) {
+    questionGuides.push({
+      questionIndex: currentQuestionIndex,
+      guide: currentGuide.join('\n')
+    });
+  }
+  
+  const generalGuide = questionGuides.length === 0 && text.length > 50 ? text : undefined;
+  
+  return { questionGuides, generalGuide };
+}

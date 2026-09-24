@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { GraduationCap, ArrowLeft, Plus, X, Save, Upload, FileText, Trash2 } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { GraduationCap, ArrowLeft, Plus, X, Save, Upload, FileText, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,8 +12,12 @@ import { storage } from '@/lib/storage';
 import { Assignment, Question } from '@/lib/types';
 import { processUploadedFile, parseAssignmentDocument, parseMarkingGuide, ParsedQuestion } from '@/lib/file-utils';
 
-export default function CreateAssignment() {
+function EditAssignmentContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const assignmentId = searchParams.get('id');
+  
+  const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [maxAiContentPercent, setMaxAiContentPercent] = useState(20);
@@ -39,6 +43,41 @@ export default function CreateAssignment() {
   const assignmentFileInputRef = useRef<HTMLInputElement>(null);
   const guideFileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (!assignmentId) {
+      router.push('/examiner');
+      return;
+    }
+    
+    const assignment = storage.getAssignment(assignmentId);
+    if (!assignment) {
+      router.push('/examiner');
+      return;
+    }
+    
+    const loadedQuestions = assignment.questions.map(q => ({
+      id: q.id,
+      prompt: q.prompt,
+      maxMarks: q.maxMarks,
+      markingGuide: q.markingGuide || ''
+    }));
+    
+    setTitle(assignment.title);
+    setSubject(assignment.subject);
+    setMaxAiContentPercent(assignment.maxAiContentPercent);
+    setQuestions(loadedQuestions);
+    
+    if (assignment.assignmentDocument) {
+      setAssignmentDocument(assignment.assignmentDocument);
+    }
+    
+    if (assignment.markingGuideDocument) {
+      setMarkingGuideDocument(assignment.markingGuideDocument);
+    }
+    
+    setLoading(false);
+  }, [assignmentId, router]);
+
   const handleAssignmentUpload = async (file: File) => {
     setIsProcessingAssignment(true);
     try {
@@ -58,7 +97,7 @@ export default function CreateAssignment() {
       if (parsed.suggestedQuestions.length > 0) {
         const shouldReplace = confirm(
           `Found ${parsed.suggestedQuestions.length} question(s) in the uploaded document.\n\n` +
-          `Click OK to populate questions from the document, or Cancel to keep your current questions.`
+          `Click OK to replace current questions with extracted ones, or Cancel to keep existing questions.`
         );
         
         if (shouldReplace) {
@@ -143,6 +182,8 @@ export default function CreateAssignment() {
   };
 
   const handleSave = () => {
+    if (!assignmentId) return;
+    
     if (!title.trim() || !subject.trim() || questions.length === 0) {
       alert('Please fill in all required fields');
       return;
@@ -157,14 +198,14 @@ export default function CreateAssignment() {
     const totalMarks = questions.reduce((sum, q) => sum + (q.maxMarks || 0), 0);
 
     const assignment: Assignment = {
-      id: crypto.randomUUID(),
+      id: assignmentId,
       title: title.trim(),
       subject: subject.trim(),
       totalMarks,
       maxAiContentPercent,
-      createdAt: new Date().toISOString(),
+      createdAt: storage.getAssignment(assignmentId)?.createdAt || new Date().toISOString(),
       questions: questions.map(q => ({
-        id: crypto.randomUUID(),
+        id: q.id || crypto.randomUUID(),
         prompt: q.prompt!.trim(),
         maxMarks: q.maxMarks!,
         markingGuide: q.markingGuide?.trim() || undefined
@@ -176,6 +217,17 @@ export default function CreateAssignment() {
     storage.saveAssignment(assignment);
     router.push('/examiner');
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto" />
+          <p className="mt-4 text-gray-600">Loading assignment...</p>
+        </div>
+      </div>
+    );
+  }
 
   const totalMarks = questions.reduce((sum, q) => sum + (q.maxMarks || 0), 0);
 
@@ -200,8 +252,8 @@ export default function CreateAssignment() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Assignment</h1>
-          <p className="text-gray-600">Upload assignment documents or type questions, marking guides, and AI content thresholds</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Assignment</h1>
+          <p className="text-gray-600">Update assignment documents, questions, marking guides, and settings</p>
         </div>
 
         <div className="space-y-6">
@@ -209,7 +261,7 @@ export default function CreateAssignment() {
             <CardHeader>
               <CardTitle>Upload Assignment Document (Optional)</CardTitle>
               <CardDescription>
-                Upload the assignment/question paper as a file (PDF, DOCX, TXT, MD, images, etc.). 
+                Upload or replace the assignment/question paper as a file (PDF, DOCX, TXT, MD, images, etc.). 
                 We&apos;ll extract text and help populate questions automatically.
               </CardDescription>
             </CardHeader>
@@ -257,7 +309,7 @@ export default function CreateAssignment() {
             <CardHeader>
               <CardTitle>Upload Marking Guide (Optional)</CardTitle>
               <CardDescription>
-                Upload the official marking guide/memorandum/rubric document. We&apos;ll extract criteria and attach them to questions.
+                Upload or replace the official marking guide/memorandum/rubric document. We&apos;ll extract criteria and attach them to questions.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -423,7 +475,7 @@ export default function CreateAssignment() {
           <div className="flex gap-4">
             <Button onClick={handleSave} size="lg" className="flex-1">
               <Save className="h-4 w-4 mr-2" />
-              Save Assignment
+              Save Changes
             </Button>
             <Link href="/examiner" className="flex-1">
               <Button variant="outline" size="lg" className="w-full">
@@ -434,5 +486,20 @@ export default function CreateAssignment() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function EditAssignment() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto" />
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <EditAssignmentContent />
+    </Suspense>
   );
 }
