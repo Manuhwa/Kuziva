@@ -6,8 +6,13 @@ const STORAGE_KEY_RESULTS = 'kuziva_results';
 export const storage = {
   getAssignments(): Assignment[] {
     if (typeof window === 'undefined') return [];
-    const data = localStorage.getItem(STORAGE_KEY_ASSIGNMENTS);
-    return data ? JSON.parse(data) : [];
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_ASSIGNMENTS);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Failed to load assignments from localStorage:', error);
+      return [];
+    }
   },
 
   saveAssignment(assignment: Assignment) {
@@ -32,8 +37,13 @@ export const storage = {
 
   getResults() {
     if (typeof window === 'undefined') return [];
-    const data = localStorage.getItem(STORAGE_KEY_RESULTS);
-    return data ? JSON.parse(data) : [];
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_RESULTS);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Failed to load results from localStorage:', error);
+      return [];
+    }
   },
 
   saveResult(result: any) {

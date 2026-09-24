@@ -28,10 +28,15 @@ function MarkAssignmentContent() {
       return;
     }
 
-    const loaded = storage.getAssignment(assignmentId);
-    if (loaded) {
-      setAssignment(loaded);
-    } else {
+    try {
+      const loaded = storage.getAssignment(assignmentId);
+      if (loaded) {
+        setAssignment(loaded);
+      } else {
+        router.push('/examiner');
+      }
+    } catch (error) {
+      console.error('Failed to load assignment:', error);
       router.push('/examiner');
     }
   }, [assignmentId, router]);

@@ -18,9 +18,13 @@ export default function ExaminerSettings() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const stored = examinerStorage.getProfile();
-    if (stored) {
-      setProfile(stored);
+    try {
+      const stored = examinerStorage.getProfile();
+      if (stored) {
+        setProfile(stored);
+      }
+    } catch (error) {
+      console.error('Failed to load examiner profile:', error);
     }
   }, []);
 

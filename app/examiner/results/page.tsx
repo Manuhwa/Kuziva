@@ -24,12 +24,17 @@ function AssignmentResultsContent() {
       return;
     }
 
-    const loaded = storage.getAssignment(assignmentId);
-    if (loaded) {
-      setAssignment(loaded);
-      const assignmentResults = storage.getResultsForAssignment(assignmentId);
-      setResults(assignmentResults);
-    } else {
+    try {
+      const loaded = storage.getAssignment(assignmentId);
+      if (loaded) {
+        setAssignment(loaded);
+        const assignmentResults = storage.getResultsForAssignment(assignmentId);
+        setResults(assignmentResults);
+      } else {
+        router.push('/examiner');
+      }
+    } catch (error) {
+      console.error('Failed to load assignment or results:', error);
       router.push('/examiner');
     }
   }, [assignmentId, router]);

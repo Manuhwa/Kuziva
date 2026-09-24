@@ -14,14 +14,20 @@ export default function ExaminerPortal() {
   const [loading, setLoading] = useState(true);
 
   const loadAssignments = () => {
-    const stored = storage.getAssignments();
-    if (stored.length === 0) {
-      sampleAssignments.forEach(sa => storage.saveAssignment(sa));
-      setAssignments(sampleAssignments);
-    } else {
-      setAssignments(stored);
+    try {
+      const stored = storage.getAssignments();
+      if (stored.length === 0) {
+        sampleAssignments.forEach(sa => storage.saveAssignment(sa));
+        setAssignments(sampleAssignments);
+      } else {
+        setAssignments(stored);
+      }
+    } catch (error) {
+      console.error('Failed to load assignments:', error);
+      setAssignments([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {

@@ -10,8 +10,13 @@ export interface ExaminerProfile {
 export const examinerStorage = {
   getProfile(): ExaminerProfile | null {
     if (typeof window === 'undefined') return null;
-    const data = localStorage.getItem(STORAGE_KEY_PROFILE);
-    return data ? JSON.parse(data) : null;
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_PROFILE);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error('Failed to load examiner profile from localStorage:', error);
+      return null;
+    }
   },
 
   saveProfile(profile: ExaminerProfile) {
