@@ -49,33 +49,39 @@ function EditAssignmentContent() {
       return;
     }
     
-    const assignment = storage.getAssignment(assignmentId);
-    if (!assignment) {
+    try {
+      const assignment = storage.getAssignment(assignmentId);
+      if (!assignment) {
+        router.push('/examiner');
+        return;
+      }
+      
+      const loadedQuestions = assignment.questions.map(q => ({
+        id: q.id,
+        prompt: q.prompt,
+        maxMarks: q.maxMarks,
+        markingGuide: q.markingGuide || ''
+      }));
+      
+      setTitle(assignment.title);
+      setSubject(assignment.subject);
+      setMaxAiContentPercent(assignment.maxAiContentPercent);
+      setQuestions(loadedQuestions);
+      
+      if (assignment.assignmentDocument) {
+        setAssignmentDocument(assignment.assignmentDocument);
+      }
+      
+      if (assignment.markingGuideDocument) {
+        setMarkingGuideDocument(assignment.markingGuideDocument);
+      }
+    } catch (error) {
+      console.error('Failed to load assignment:', error);
       router.push('/examiner');
       return;
+    } finally {
+      setLoading(false);
     }
-    
-    const loadedQuestions = assignment.questions.map(q => ({
-      id: q.id,
-      prompt: q.prompt,
-      maxMarks: q.maxMarks,
-      markingGuide: q.markingGuide || ''
-    }));
-    
-    setTitle(assignment.title);
-    setSubject(assignment.subject);
-    setMaxAiContentPercent(assignment.maxAiContentPercent);
-    setQuestions(loadedQuestions);
-    
-    if (assignment.assignmentDocument) {
-      setAssignmentDocument(assignment.assignmentDocument);
-    }
-    
-    if (assignment.markingGuideDocument) {
-      setMarkingGuideDocument(assignment.markingGuideDocument);
-    }
-    
-    setLoading(false);
   }, [assignmentId, router]);
 
   const handleAssignmentUpload = async (file: File) => {
