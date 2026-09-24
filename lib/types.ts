@@ -13,6 +13,16 @@ export interface Assignment {
   maxAiContentPercent: number;
   questions: Question[];
   createdAt: string;
+  assignmentDocument?: {
+    fileName: string;
+    extractedText: string;
+    extractionMethod: string;
+  };
+  markingGuideDocument?: {
+    fileName: string;
+    extractedText: string;
+    extractionMethod: string;
+  };
 }
 
 export interface InlineComment {

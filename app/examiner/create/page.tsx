@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, ArrowLeft, Plus, X, Save } from 'lucide-react';
+import { GraduationCap, ArrowLeft, Plus, X, Save, Upload, FileText, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { storage } from '@/lib/storage';
 import { Assignment, Question } from '@/lib/types';
+import { processUploadedFile, parseAssignmentDocument, parseMarkingGuide, ParsedQuestion } from '@/lib/file-utils';
 
 export default function CreateAssignment() {
   const router = useRouter();
@@ -19,6 +20,111 @@ export default function CreateAssignment() {
   const [questions, setQuestions] = useState<Partial<Question>[]>([
     { prompt: '', maxMarks: 10, markingGuide: '' }
   ]);
+  
+  const [assignmentDocument, setAssignmentDocument] = useState<{
+    fileName: string;
+    extractedText: string;
+    extractionMethod: string;
+  } | null>(null);
+  
+  const [markingGuideDocument, setMarkingGuideDocument] = useState<{
+    fileName: string;
+    extractedText: string;
+    extractionMethod: string;
+  } | null>(null);
+  
+  const [isProcessingAssignment, setIsProcessingAssignment] = useState(false);
+  const [isProcessingGuide, setIsProcessingGuide] = useState(false);
+  
+  const assignmentFileInputRef = useRef<HTMLInputElement>(null);
+  const guideFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAssignmentUpload = async (file: File) => {
+    setIsProcessingAssignment(true);
+    try {
+      const { content, method } = await processUploadedFile(file);
+      setAssignmentDocument({
+        fileName: file.name,
+        extractedText: content,
+        extractionMethod: method
+      });
+      
+      const parsed = parseAssignmentDocument(content);
+      
+      if (parsed.suggestedTitle && !title) {
+        setTitle(parsed.suggestedTitle);
+      }
+      
+      if (parsed.suggestedQuestions.length > 0) {
+        const shouldReplace = confirm(
+          `Found ${parsed.suggestedQuestions.length} question(s) in the uploaded document.\n\n` +
+          `Click OK to populate questions from the document, or Cancel to keep your current questions.`
+        );
+        
+        if (shouldReplace) {
+          setQuestions(parsed.suggestedQuestions.map(q => ({
+            prompt: q.prompt,
+            maxMarks: q.maxMarks,
+            markingGuide: q.markingGuide || ''
+          })));
+        }
+      }
+    } catch (error: any) {
+      alert(`Failed to process assignment document: ${error.message}`);
+    } finally {
+      setIsProcessingAssignment(false);
+    }
+  };
+
+  const handleMarkingGuideUpload = async (file: File) => {
+    setIsProcessingGuide(true);
+    try {
+      const { content, method } = await processUploadedFile(file);
+      setMarkingGuideDocument({
+        fileName: file.name,
+        extractedText: content,
+        extractionMethod: method
+      });
+      
+      const parsed = parseMarkingGuide(content, questions as ParsedQuestion[]);
+      
+      if (parsed.questionGuides.length > 0) {
+        const shouldApply = confirm(
+          `Found marking criteria for ${parsed.questionGuides.length} question(s).\n\n` +
+          `Click OK to apply these guides to your questions, or Cancel to keep existing guides.`
+        );
+        
+        if (shouldApply) {
+          const updatedQuestions = [...questions];
+          parsed.questionGuides.forEach(({ questionIndex, guide }) => {
+            if (questionIndex >= 0 && questionIndex < updatedQuestions.length) {
+              updatedQuestions[questionIndex] = {
+                ...updatedQuestions[questionIndex],
+                markingGuide: guide
+              };
+            }
+          });
+          setQuestions(updatedQuestions);
+        }
+      } else if (parsed.generalGuide) {
+        const shouldApply = confirm(
+          `Found a general marking guide.\n\n` +
+          `Click OK to apply this guide to all questions, or Cancel to keep existing guides.`
+        );
+        
+        if (shouldApply) {
+          setQuestions(questions.map(q => ({
+            ...q,
+            markingGuide: parsed.generalGuide
+          })));
+        }
+      }
+    } catch (error: any) {
+      alert(`Failed to process marking guide: ${error.message}`);
+    } finally {
+      setIsProcessingGuide(false);
+    }
+  };
 
   const addQuestion = () => {
     setQuestions([...questions, { prompt: '', maxMarks: 10, markingGuide: '' }]);
@@ -60,7 +166,9 @@ export default function CreateAssignment() {
         prompt: q.prompt!.trim(),
         maxMarks: q.maxMarks!,
         markingGuide: q.markingGuide?.trim() || undefined
-      }))
+      })),
+      assignmentDocument: assignmentDocument || undefined,
+      markingGuideDocument: markingGuideDocument || undefined
     };
 
     storage.saveAssignment(assignment);
@@ -91,10 +199,105 @@ export default function CreateAssignment() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Assignment</h1>
-          <p className="text-gray-600">Set up questions, marking guides, and AI content thresholds</p>
+          <p className="text-gray-600">Upload assignment documents or type questions, marking guides, and AI content thresholds</p>
         </div>
 
         <div className="space-y-6">
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle>Upload Assignment Document (Optional)</CardTitle>
+              <CardDescription>
+                Upload the assignment/question paper as a file (PDF, DOCX, TXT, MD, images, etc.). 
+                We'll extract text and help populate questions automatically.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!assignmentDocument ? (
+                <div className="flex gap-4">
+                  <Button
+                    onClick={() => assignmentFileInputRef.current?.click()}
+                    disabled={isProcessingAssignment}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {isProcessingAssignment ? 'Processing...' : 'Upload Assignment'}
+                  </Button>
+                  <input
+                    ref={assignmentFileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleAssignmentUpload(e.target.files[0])}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-white border border-green-300 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">{assignmentDocument.fileName}</p>
+                      <p className="text-sm text-gray-600">Extracted via {assignmentDocument.extractionMethod}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAssignmentDocument(null)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-purple-200 bg-purple-50">
+            <CardHeader>
+              <CardTitle>Upload Marking Guide (Optional)</CardTitle>
+              <CardDescription>
+                Upload the official marking guide/memorandum/rubric document. We'll extract criteria and attach them to questions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!markingGuideDocument ? (
+                <div className="flex gap-4">
+                  <Button
+                    onClick={() => guideFileInputRef.current?.click()}
+                    disabled={isProcessingGuide}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {isProcessingGuide ? 'Processing...' : 'Upload Marking Guide'}
+                  </Button>
+                  <input
+                    ref={guideFileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleMarkingGuideUpload(e.target.files[0])}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-white border border-green-300 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-purple-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">{markingGuideDocument.fileName}</p>
+                      <p className="text-sm text-gray-600">Extracted via {markingGuideDocument.extractionMethod}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMarkingGuideDocument(null)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Assignment Details</CardTitle>
